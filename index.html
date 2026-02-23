@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swara Notation Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@300;400;600&display=swap" rel="stylesheet">
+
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Swara Notation Converter <span>LaTeX &#x21C4; Rendered Carnatic Notation</span></h1>
+  </header>
+
+  <!-- Mode Tabs -->
+  <div class="tabs">
+    <button class="tab" id="tab-rev" onclick="setMode('rev')">&#8592;&nbsp; Rendered → LaTeX</button>
+    <button class="tab active" id="tab-fwd" onclick="setMode('fwd')">&#8594;&nbsp; LaTeX → Rendered</button>
+  </div>
+
+  <!-- ══════════ FORWARD MODE ══════════ -->
+  <div id="mode-fwd">
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item">
+        <div class="s" style="font-size:1.05rem"><div class="dot-top" style="letter-spacing:.5px">&#9679;&#9679;</div><div>ச</div><div></div></div>
+        <div class="legend-label">atitāra s..</div>
+      </div>
+      <div class="legend-item">
+        <div class="s" style="font-size:1.05rem"><div class="dot-top">&#9679;</div><div>ச</div><div></div></div>
+        <div class="legend-label">tāra s.</div>
+      </div>
+      <div class="legend-item">
+        <div class="s" style="font-size:1.05rem"><div></div><div>ச</div><div></div></div>
+        <div class="legend-label">madhya s</div>
+      </div>
+      <div class="legend-item">
+        <div class="s" style="font-size:1.05rem"><div></div><div>ச</div><div class="dot-bot">&#9679;</div></div>
+        <div class="legend-label">mandra .s</div>
+      </div>
+      <div class="legend-item">
+        <div class="s" style="font-size:1.05rem"><div></div><div>ச</div><div class="dot-bot" style="letter-spacing:.5px">&#9679;&#9679;</div></div>
+        <div class="legend-label">anumandra ..s</div>
+      </div>
+      <div class="legend-item">
+        <div class="bar" style="font-size:1.05rem"><div></div><div class="bar-mid">|</div><div></div></div>
+        <div class="legend-label">\big| bar</div>
+      </div>
+    </div>
+
+    <!-- Swara Picker — Forward -->
+    <span class="sect-label">Swara Picker</span>
+    <div class="picker" id="picker-fwd" data-octave="middle" data-target="fwd-input" data-mode="fwd">
+      <div class="picker-top">
+        <span class="sect-label">Octave</span>
+        <select class="octave-select" onchange="setOctave('picker-fwd', this.value)">
+          <option value="atitara">↑↑ Ati-tāra (s..)</option>
+          <option value="upper">↑ Tāra (s.)</option>
+          <option value="middle" selected>— Madhya (s)</option>
+          <option value="lower">↓ Mandra (.s)</option>
+          <option value="anumandra">↓↓ Anu-mandra (..s)</option>
+        </select>
+        <!-- Live preview cell -->
+        <div class="octave-preview" id="preview-fwd">
+          <div class="preview-dot-t" id="pdot-t-fwd"></div>
+          <div id="preview-char-fwd">ச</div>
+          <div class="preview-dot-b" id="pdot-b-fwd"></div>
+        </div>
+        <button class="bar-btn" onclick="insertBar('fwd-input','fwd')" title="Insert bar separator">| bar</button>
+      </div>
+      <div class="swara-grid" id="grid-fwd"></div>
+    </div>
+
+    <span class="sect-label">LaTeX Input</span>
+    <textarea id="fwd-input" spellcheck="false"></textarea>
+
+    <div class="btn-row">
+      <button onclick="convertFwd()">Convert &#9654;</button>
+      <button class="sec" onclick="copyFwdPlain()">Copy Plain</button>
+      <button class="sec" onclick="clearFwd()">Clear</button>
+    </div>
+
+    <div class="output-panel" id="fwd-output" data-label="Rendered Notation">
+      <div class="placeholder">Converted notation will appear here&#8230;</div>
+    </div>
+  </div>
+
+  <!-- ══════════ REVERSE MODE ══════════ -->
+  <div id="mode-rev" style="display:none">
+    <div class="hint">
+      Dot markers: <code>ச..</code>&nbsp;= ati-tāra &nbsp;|&nbsp; <code>ச.</code>&nbsp;= tāra &nbsp;|&nbsp; <code>ச</code>&nbsp;= madhya &nbsp;|&nbsp; <code>.ச</code>&nbsp;= mandra &nbsp;|&nbsp; <code>..ச</code>&nbsp;= anu-mandra &nbsp;|&nbsp; <code>|</code>&nbsp;= bar<br>
+      Or use the <strong>Swara Picker</strong> below to insert automatically.
+    </div>
+
+    <!-- Swara Picker — Reverse -->
+    <span class="sect-label">Swara Picker</span>
+    <div class="picker" id="picker-rev" data-octave="middle" data-target="rev-input" data-mode="rev">
+      <div class="picker-top">
+        <span class="sect-label">Octave</span>
+        <select class="octave-select" onchange="setOctave('picker-rev', this.value)">
+          <option value="atitara">↑↑ Ati-tāra (s..)</option>
+          <option value="upper">↑ Tāra (s.)</option>
+          <option value="middle" selected>— Madhya (s)</option>
+          <option value="lower">↓ Mandra (.s)</option>
+          <option value="anumandra">↓↓ Anu-mandra (..s)</option>
+        </select>
+        <!-- Live preview cell -->
+        <div class="octave-preview" id="preview-rev">
+          <div class="preview-dot-t" id="pdot-t-rev"></div>
+          <div id="preview-char-rev">ச</div>
+          <div class="preview-dot-b" id="pdot-b-rev"></div>
+        </div>
+        <button class="bar-btn" onclick="insertBar('rev-input','rev')" title="Insert bar separator">| bar</button>
+      </div>
+      <div class="swara-grid" id="grid-rev"></div>
+    </div>
+
+    <span class="sect-label">Plain Notation Input</span>
+    <textarea id="rev-input" spellcheck="false" placeholder="e.g.  ச. நி ப ச. | க. நி க. ச. | .நி ச |"></textarea>
+
+    <div class="btn-row">
+      <button onclick="convertRev()">Convert &#9654;</button>
+      <button class="sec" onclick="copyLatex()">Copy LaTeX</button>
+      <button class="sec" onclick="clearRev()">Clear</button>
+    </div>
+
+    <div class="output-panel" id="rev-output" data-label="LaTeX Output">
+      <div class="placeholder">LaTeX code will appear here&#8230;</div>
+    </div>
+  </div>
+
+  <!-- Reference -->
+  <details>
+    <summary>Conversion Reference</summary>
+    <table>
+      <thead><tr><th>LaTeX / Plain marker</th><th>Renders</th><th>Meaning</th></tr></thead>
+      <tbody id="ref-body"></tbody>
+    </table>
+  </details>
+</div>
+</body>
+</html>
