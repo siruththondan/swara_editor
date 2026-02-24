@@ -5,8 +5,261 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Swara Notation Converter</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@300;400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="index.css">
-<script src="index.js"></script>
+<style>
+  /* ══ PaperMod exact CSS variables ══ */
+  :root {
+    --theme:     rgb(255,255,255);
+    --entry:     rgb(255,255,255);
+    --primary:   rgb(30,30,30);
+    --secondary: rgb(108,108,108);
+    --tertiary:  rgb(214,214,214);
+    --content:   rgb(31,31,31);
+    --code-bg:   rgb(245,245,245);
+    --border:    rgb(238,238,238);
+    --radius:    8px;
+    --btn-bg:    var(--primary);
+    --btn-fg:    var(--theme);
+    --dot-col:   var(--secondary);
+  }
+  .dark {
+    --theme:     rgb(29,30,32);
+    --entry:     rgb(46,46,51);
+    --primary:   rgb(218,218,219);
+    --secondary: rgb(155,156,157);
+    --tertiary:  rgb(65,66,68);
+    --content:   rgb(196,196,197);
+    --code-bg:   rgb(55,56,62);
+    --border:    rgb(51,51,51);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not(.light) {
+      --theme:     rgb(29,30,32);
+      --entry:     rgb(46,46,51);
+      --primary:   rgb(218,218,219);
+      --secondary: rgb(155,156,157);
+      --tertiary:  rgb(65,66,68);
+      --content:   rgb(196,196,197);
+      --code-bg:   rgb(55,56,62);
+      --border:    rgb(51,51,51);
+    }
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--theme);
+    color: var(--content);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 40px 20px 60px;
+    transition: background .2s, color .2s;
+  }
+
+  .container { max-width: 760px; margin: 0 auto; }
+
+  /* ── Header ── */
+  header { margin-bottom: 28px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+  h1 { font-size: 1.45rem; font-weight: 700; color: var(--primary); letter-spacing: -.01em; }
+  h1 span { font-size: .77rem; font-weight: 400; color: var(--secondary); display: block; margin-top: 3px; font-family: 'Noto Sans Tamil', sans-serif; }
+
+  /* ── Mode Tabs ── */
+  .tabs { display:flex; margin-bottom:22px; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; background:var(--entry); }
+  .tab { flex:1; padding:9px 12px; text-align:center; cursor:pointer; font-size:.78rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; background:transparent; color:var(--secondary); border:none; transition:background .15s,color .15s; }
+  .tab + .tab { border-left:1px solid var(--border); }
+  .tab.active { background:var(--btn-bg); color:var(--btn-fg); }
+  .tab:not(.active):hover { background:var(--code-bg); color:var(--primary); }
+
+  /* ── Section label ── */
+  .sect-label { font-size:.7rem; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--secondary); margin-bottom:6px; display:block; }
+
+  /* ── Swara Picker ── */
+  .picker {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px 12px;
+    margin-bottom: 14px;
+  }
+
+  .picker-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .picker-top .sect-label { margin-bottom: 0; white-space: nowrap; }
+
+  /* Octave dropdown */
+  .octave-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--entry);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--primary);
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 600;
+    padding: 5px 28px 5px 10px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .15s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
+    background-size: 10px;
+  }
+  .octave-select:focus { border-color: var(--secondary); }
+
+  /* Preview of current octave+swara */
+  .octave-preview {
+    display: inline-grid;
+    grid-template-rows: 12px auto 12px;
+    text-align: center;
+    font-family: 'Noto Sans Tamil', sans-serif;
+    font-size: 1.15rem;
+    color: var(--primary);
+    min-width: 28px;
+    line-height: 1;
+    border: 1px dashed var(--border);
+    border-radius: 5px;
+    padding: 2px 6px;
+    background: var(--entry);
+  }
+  .preview-dot-t, .preview-dot-b { font-size: .45rem; color: var(--dot-col); font-weight: 900; }
+  .preview-dot-t { display:flex; align-items:flex-end; justify-content:center; }
+  .preview-dot-b { display:flex; align-items:flex-start; justify-content:center; }
+
+  /* Bar button in picker */
+  .bar-btn {
+    padding: 5px 14px;
+    background: var(--entry);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--secondary);
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .12s, border-color .12s;
+    font-family: monospace;
+  }
+  .bar-btn:hover { background: var(--tertiary); color: var(--primary); border-color: var(--secondary); }
+  .bar-btn:active { opacity: .75; }
+
+  /* Swara grid */
+  .swara-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .swara-btn {
+    display: inline-grid;
+    grid-template-rows: 10px auto 10px;
+    text-align: center;
+    font-family: 'Noto Sans Tamil', sans-serif;
+    font-size: 1.15rem;
+    color: var(--primary);
+    background: var(--entry);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px 10px;
+    cursor: pointer;
+    line-height: 1;
+    transition: background .12s, border-color .12s, transform .08s;
+    min-width: 44px;
+    position: relative;
+  }
+
+  .swara-btn:hover { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
+  .swara-btn:active { transform: scale(.93); }
+
+  .sb-dot-t, .sb-dot-b { font-size: .38rem; font-weight: 900; opacity: 0; transition: opacity .1s; letter-spacing:.6px; }
+  .sb-dot-t { display:flex; align-items:flex-end; justify-content:center; color: var(--dot-col); }
+  .sb-dot-b { display:flex; align-items:flex-start; justify-content:center; color: var(--dot-col); }
+
+  /* show dot(s) based on data-octave on .picker */
+  .picker[data-octave="upper"]    .swara-btn .sb-dot-t { opacity:1; }
+  .picker[data-octave="atitara"]  .swara-btn .sb-dot-t { opacity:1; }
+  .picker[data-octave="lower"]    .swara-btn .sb-dot-b { opacity:1; }
+  .picker[data-octave="anumandra"].swara-btn .sb-dot-b { opacity:1; }
+
+  /* dot colors invert on hover */
+  .swara-btn:hover .sb-dot-t,
+  .swara-btn:hover .sb-dot-b { color: var(--btn-fg); }
+
+  /* ── Textareas ── */
+  textarea {
+    width:100%; min-height:110px; background:var(--code-bg);
+    border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px;
+    font-family:'Courier New',monospace; font-size:.8rem; color:var(--primary);
+    resize:vertical; outline:none; line-height:1.7; transition:border-color .15s;
+  }
+  textarea:focus { border-color: var(--secondary); }
+  #rev-input { font-family:'Noto Sans Tamil',sans-serif; font-size:1rem; line-height:2.2; }
+
+  /* ── Buttons ── */
+  .btn-row { display:flex; gap:8px; margin:10px 0 20px; flex-wrap:wrap; }
+  button {
+    padding:8px 18px; background:var(--btn-bg); color:var(--btn-fg); border:1px solid transparent;
+    border-radius:var(--radius); font-family:inherit; font-size:.78rem; font-weight:600;
+    cursor:pointer; letter-spacing:.04em; transition:opacity .15s, background .15s;
+  }
+  button:hover { opacity:.82; }
+  button:active { opacity:.65; }
+  button.sec { background:var(--entry); color:var(--primary); border-color:var(--border); }
+  button.sec:hover { background:var(--code-bg); opacity:1; }
+
+  /* ── Output panels ── */
+  .output-panel {
+    background:var(--entry); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px 16px; min-height:76px; position:relative;
+  }
+  .output-panel::before {
+    content:attr(data-label); position:absolute; top:-.58em; left:12px;
+    background:var(--theme); padding:0 6px; font-size:.66rem; font-weight:600;
+    letter-spacing:.09em; text-transform:uppercase; color:var(--secondary);
+  }
+  @keyframes flash { 0%{background:rgba(100,180,100,.15)} 100%{background:var(--entry)} }
+  .flash { animation:flash .6s ease-out; }
+
+  /* ── Notation render ── */
+  .notation-line { display:flex; flex-wrap:wrap; align-items:center; gap:2px; row-gap:20px; font-family:'Noto Sans Tamil',sans-serif; }
+  .s { display:inline-grid; grid-template-rows:14px auto 14px; text-align:center; line-height:1; font-size:1.35rem; color:var(--primary); padding:0 3px; min-width:1.4rem; }
+  .dot-top,.dot-bot { font-size:.5rem; color:var(--dot-col); font-weight:900; }
+  .dot-top { display:flex; align-items:flex-end; justify-content:center; padding-bottom:1px; }
+  .dot-bot { display:flex; align-items:flex-start; justify-content:center; padding-top:1px; }
+  .bar { display:inline-grid; grid-template-rows:14px auto 14px; text-align:center; padding:0 8px; font-size:1.35rem; color:var(--tertiary); }
+  .bar-mid { grid-row:2; }
+  .latex-out { font-family:'Courier New',monospace; font-size:.79rem; color:var(--primary); white-space:pre-wrap; word-break:break-all; line-height:1.75; }
+  .placeholder { color:var(--secondary); font-style:italic; font-size:.84rem; padding:4px 0; }
+
+  /* ── Legend ── */
+  .legend { display:flex; gap:18px; flex-wrap:wrap; margin-bottom:14px; padding:10px 12px; background:var(--code-bg); border-radius:var(--radius); border:1px solid var(--border); align-items:flex-end; }
+  .legend-item { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .legend-label { font-size:.6rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--secondary); text-align:center; }
+
+  /* ── Hint ── */
+  .hint { background:var(--code-bg); border:1px solid var(--border); border-left:3px solid var(--tertiary); border-radius:var(--radius); padding:9px 13px; margin-bottom:14px; font-size:.78rem; color:var(--secondary); line-height:1.7; }
+  .hint code { font-family:'Courier New',monospace; background:var(--entry); border:1px solid var(--border); padding:1px 5px; border-radius:4px; font-size:.88em; color:var(--primary); }
+  .hint strong { color:var(--primary); }
+
+  /* ── Reference ── */
+  details { margin-top:22px; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  summary { padding:8px 13px; background:var(--code-bg); cursor:pointer; font-size:.73rem; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--secondary); user-select:none; list-style:none; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:' ▾'; }
+  details[open] summary::after { content:' ▴'; }
+  table { width:100%; border-collapse:collapse; font-size:.78rem; background:var(--entry); }
+  th,td { padding:6px 11px; border-bottom:1px solid var(--border); text-align:left; vertical-align:middle; color:var(--content); }
+  th { color:var(--secondary); font-weight:600; font-size:.7rem; text-transform:uppercase; letter-spacing:.07em; background:var(--code-bg); }
+  td:first-child { font-family:'Courier New',monospace; font-size:.73rem; color:var(--secondary); }
+  td:nth-child(2) { font-family:'Noto Sans Tamil',sans-serif; font-size:1.05rem; }
+</style>
 </head>
 <body>
 <div class="container">
@@ -16,8 +269,8 @@
 
   <!-- Mode Tabs -->
   <div class="tabs">
-    <button class="tab" id="tab-rev" onclick="setMode('rev')">&#8592;&nbsp; Rendered → LaTeX</button>
     <button class="tab active" id="tab-fwd" onclick="setMode('fwd')">&#8594;&nbsp; LaTeX → Rendered</button>
+    <button class="tab" id="tab-rev" onclick="setMode('rev')">&#8592;&nbsp; Rendered → LaTeX</button>
   </div>
 
   <!-- ══════════ FORWARD MODE ══════════ -->
@@ -74,7 +327,12 @@
     </div>
 
     <span class="sect-label">LaTeX Input</span>
-    <textarea id="fwd-input" spellcheck="false"></textarea>
+    <textarea id="fwd-input" spellcheck="false">\overset{\text{.}}{&#2970;}\ &#2984;&#3007;\ &#2986;\ \overset{\text{.}}{&#2970;} \;\big|\;
+\overset{\text{.}}{&#2965;}\ &#2984;&#3007;\ \overset{\text{.}}{&#2965;}\ \overset{\text{.}}{&#2970;} \;\big|\;
+&#2984;&#3007;\ &#2980;\ &#2984;&#3007;\ \overset{\text{.}}{&#2970;} \;\big|\;
+&#2990;\ &#2986;\ &#2984;&#3007;\ \overset{\text{.}}{&#2970;}\;\big|\;
+\overset{\text{.}}{&#2990;}\ \overset{\text{.}}{&#2992;&#3007;}\ \overset{\text{.}}{&#2965;}\ \overset{\text{.}}{&#2970;} \;\big|\;
+&#2992;&#3007;\ &#2965;\ \underset{\text{.}}{&#2984;&#3007;}\ &#2970; \;\big|\;</textarea>
 
     <div class="btn-row">
       <button onclick="convertFwd()">Convert &#9654;</button>
@@ -140,5 +398,362 @@
     </table>
   </details>
 </div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  SWARA DEFINITIONS
+//  Each entry: { label, char }  (char = Tamil string to insert)
+// ═══════════════════════════════════════════════════════
+const SWARAS = [
+  { label:'ச',   char:'ச'  },   // Sa
+  { label:'ரி',  char:'ரி' },   // Ri
+  { label:'க',   char:'க'  },   // Ga
+  { label:'ம',   char:'ம'  },   // Ma
+  { label:'ப',   char:'ப'  },   // Pa
+  { label:'த',   char:'த'  },   // Dha
+  { label:'நி',  char:'நி' },   // Ni
+];
+
+// ═══════════════════════════════════════════════════════
+//  BUILD PICKER GRIDS
+// ═══════════════════════════════════════════════════════
+['fwd','rev'].forEach(mode => {
+  const grid = document.getElementById('grid-' + mode);
+  SWARAS.forEach(sw => {
+    const btn = document.createElement('button');
+    btn.className = 'swara-btn';
+    btn.title = `Insert ${sw.label}`;
+    btn.innerHTML = `
+      <span class="sb-dot-t">&#9679;</span>
+      <span class="sb-char">${sw.char}</span>
+      <span class="sb-dot-b">&#9679;</span>`;
+    btn.addEventListener('click', () => insertSwara(mode, sw.char));
+    grid.appendChild(btn);
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  OCTAVE STATE
+// ═══════════════════════════════════════════════════════
+const octaveState = { fwd: 'middle', rev: 'middle' };
+const PREVIEW_CHAR = { fwd: 'ச', rev: 'ச' };  // last hovered
+
+function setOctave(pickerId, octave) {
+  const picker = document.getElementById(pickerId);
+  const mode   = picker.dataset.mode;
+  picker.dataset.octave = octave;
+  octaveState[mode] = octave;
+  updatePreview(mode, PREVIEW_CHAR[mode]);
+}
+
+function updatePreview(mode, char) {
+  PREVIEW_CHAR[mode] = char;
+  const oct = octaveState[mode];
+  const dotAbove = oct === 'upper' ? '&#9679;' : oct === 'atitara' ? '&#9679;&#9679;' : '';
+  const dotBelow = oct === 'lower' ? '&#9679;' : oct === 'anumandra' ? '&#9679;&#9679;' : '';
+  document.getElementById('pdot-t-' + mode).innerHTML = dotAbove;
+  document.getElementById('pdot-b-' + mode).innerHTML = dotBelow;
+  document.getElementById('preview-char-' + mode).textContent = char;
+}
+
+// Update preview on button hover
+['fwd','rev'].forEach(mode => {
+  document.getElementById('grid-' + mode).querySelectorAll('.swara-btn').forEach((btn, i) => {
+    btn.addEventListener('mouseenter', () => updatePreview(mode, SWARAS[i].char));
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  INSERT INTO TEXTAREA
+// ═══════════════════════════════════════════════════════
+function insertSwara(mode, char) {
+  const ta  = document.getElementById(mode === 'fwd' ? 'fwd-input' : 'rev-input');
+  const oct = octaveState[mode];
+  let snippet;
+
+  if (mode === 'fwd') {
+    if      (oct === 'atitara')   snippet = `\\overset{\\text{..}}{${char}}\\ `;
+    else if (oct === 'upper')     snippet = `\\overset{\\text{.}}{${char}}\\ `;
+    else if (oct === 'lower')     snippet = `\\underset{\\text{.}}{${char}}\\ `;
+    else if (oct === 'anumandra') snippet = `\\underset{\\text{..}}{${char}}\\ `;
+    else                          snippet = `${char}\\ `;
+  } else {
+    if      (oct === 'atitara')   snippet = `${char}.. `;
+    else if (oct === 'upper')     snippet = `${char}. `;
+    else if (oct === 'lower')     snippet = `.${char} `;
+    else if (oct === 'anumandra') snippet = `..${char} `;
+    else                          snippet = `${char} `;
+  }
+
+  insertAtCursor(ta, snippet);
+  ta.focus();
+  if (mode === 'fwd') { clearTimeout(fwdT); fwdT = setTimeout(convertFwd, 180); }
+  else { clearTimeout(revT); revT = setTimeout(convertRev, 180); }
+}
+
+function insertBar(taId, mode) {
+  const ta = document.getElementById(taId);
+  const snippet = mode === 'fwd' ? ' \\;\\big|\\;\n' : ' | ';
+  insertAtCursor(ta, snippet);
+  ta.focus();
+  if (mode === 'fwd') { clearTimeout(fwdT); fwdT = setTimeout(convertFwd, 180); }
+  else { clearTimeout(revT); revT = setTimeout(convertRev, 180); }
+}
+
+function insertAtCursor(ta, text) {
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const val   = ta.value;
+  ta.value = val.slice(0, start) + text + val.slice(end);
+  const pos = start + text.length;
+  ta.setSelectionRange(pos, pos);
+}
+
+// ═══════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════
+function tamilCluster(src, i) {
+  let j = i + 1;
+  while (j < src.length) {
+    const cp = src.codePointAt(j);
+    if ((cp >= 0x0BBE && cp <= 0x0BCD) || cp === 0x0BD7) j += cp > 0xFFFF ? 2 : 1;
+    else break;
+  }
+  return src.slice(i, j);
+}
+
+function escHTML(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function flashPanel(id, html) {
+  const el = document.getElementById(id);
+  el.innerHTML = html;
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    document.querySelectorAll('button.sec').forEach(b => {
+      if (b.textContent.includes('Copy')) {
+        const o = b.textContent;
+        b.textContent = 'Copied ✓';
+        setTimeout(() => b.textContent = o, 1500);
+      }
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  FORWARD: LaTeX → Rendered
+// ═══════════════════════════════════════════════════════
+function tokeniseFwd(src) {
+  const tokens = []; let i = 0;
+  while (i < src.length) {
+    if (/[\n\r]/.test(src[i])) { i++; continue; }
+    if (src.startsWith('\\;', i)) { i += 2; continue; }
+    if (src.startsWith('\\ ', i)) { i += 2; continue; }
+    const OVER2  = '\\overset{\\text{..}}{';
+    const UNDER2 = '\\underset{\\text{..}}{';
+    const OVER   = '\\overset{\\text{.}}{';
+    const UNDER  = '\\underset{\\text{.}}{';
+    // double-dot must be checked BEFORE single-dot (longer prefix first)
+    if (src.startsWith(OVER2, i)) {
+      const s = i + OVER2.length, e = src.indexOf('}', s);
+      if (e !== -1) { tokens.push({ type:'atitara', text: src.slice(s,e) }); i = e+1; continue; }
+    }
+    if (src.startsWith(UNDER2, i)) {
+      const s = i + UNDER2.length, e = src.indexOf('}', s);
+      if (e !== -1) { tokens.push({ type:'anumandra', text: src.slice(s,e) }); i = e+1; continue; }
+    }
+    if (src.startsWith(OVER, i)) {
+      const s = i + OVER.length, e = src.indexOf('}', s);
+      if (e !== -1) { tokens.push({ type:'upper', text: src.slice(s,e) }); i = e+1; continue; }
+    }
+    if (src.startsWith(UNDER, i)) {
+      const s = i + UNDER.length, e = src.indexOf('}', s);
+      if (e !== -1) { tokens.push({ type:'lower', text: src.slice(s,e) }); i = e+1; continue; }
+    }
+    if (src.startsWith('\\big|', i)) { tokens.push({ type:'bar' }); i += 5; continue; }
+    if (src[i] === '\\') { i++; while (i < src.length && /[a-zA-Z]/.test(src[i])) i++; continue; }
+    if (src.charCodeAt(i) > 127) {
+      const ch = tamilCluster(src, i);
+      if (ch.trim()) tokens.push({ type:'normal', text: ch });
+      i += ch.length; continue;
+    }
+    if (src[i] === '|') { tokens.push({ type:'bar' }); i++; continue; }
+    i++;
+  }
+  return tokens;
+}
+
+function swaraHTML(tok) {
+  const dT = tok.type === 'atitara' ? '&#9679;&#9679;' : tok.type === 'upper' ? '&#9679;' : '';
+  const dB = tok.type === 'anumandra' ? '&#9679;&#9679;' : tok.type === 'lower' ? '&#9679;' : '';
+  return `<span class="s"><span class="dot-top" style="letter-spacing:.5px">${dT}</span><span>${tok.text}</span><span class="dot-bot" style="letter-spacing:.5px">${dB}</span></span>`;
+}
+
+function renderFwd(tokens) {
+  if (!tokens.length) return '<div class="placeholder">No swaras detected.</div>';
+  return '<div class="notation-line">' + tokens.map(t =>
+    t.type === 'bar'
+      ? '<span class="bar"><span></span><span class="bar-mid">|</span><span></span></span>'
+      : swaraHTML(t)
+  ).join('') + '</div>';
+}
+
+function convertFwd() {
+  flashPanel('fwd-output', renderFwd(tokeniseFwd(document.getElementById('fwd-input').value)));
+}
+
+function copyFwdPlain() {
+  const tokens = tokeniseFwd(document.getElementById('fwd-input').value);
+  // Build parts, then join with single space — bars get no extra padding
+  const parts = tokens.map(t => {
+    if (t.type === 'bar')       return '|';
+    if (t.type === 'atitara')   return t.text + '..';
+    if (t.type === 'upper')     return t.text + '.';
+    if (t.type === 'lower')     return '.' + t.text;
+    if (t.type === 'anumandra') return '..' + t.text;
+    return t.text;
+  });
+  copyText(parts.join(' '));
+}
+
+function clearFwd() {
+  document.getElementById('fwd-input').value = '';
+  document.getElementById('fwd-output').innerHTML = '<div class="placeholder">Converted notation will appear here\u2026</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+//  REVERSE: Plain → LaTeX
+// ═══════════════════════════════════════════════════════
+function tokeniseRev(src) {
+  const tokens = []; let i = 0;
+  const skipWS = () => { while (i < src.length && /[ \t]/.test(src[i])) i++; };
+  const isDot  = (c) => c === '.' || c === '\u00B7' || c === '\u2022';
+
+  while (i < src.length) {
+    if (/[\n\r]/.test(src[i])) { i++; continue; }
+    skipWS(); if (i >= src.length) break;
+    if (src[i] === '|') { tokens.push({ type:'bar' }); i++; continue; }
+
+    // Pre-dots (lower / anumandra): count consecutive dots before Tamil char
+    if (isDot(src[i])) {
+      let dots = 0;
+      while (i < src.length && isDot(src[i])) { dots++; i++; }
+      skipWS();
+      if (i < src.length && src.charCodeAt(i) > 127) {
+        const ch = tamilCluster(src, i); i += ch.length;
+        tokens.push({ type: dots >= 2 ? 'anumandra' : 'lower', text: ch }); continue;
+      }
+      continue; // lone dot(s) — skip
+    }
+
+    // Tamil cluster
+    if (src.charCodeAt(i) > 127) {
+      const ch = tamilCluster(src, i); i += ch.length;
+      // Count post-dots
+      let dots = 0;
+      while (i < src.length && isDot(src[i])) { dots++; i++; }
+      if (dots >= 2) { tokens.push({ type:'atitara',  text: ch }); continue; }
+      if (dots === 1){ tokens.push({ type:'upper',    text: ch }); continue; }
+      tokens.push({ type:'normal', text: ch }); continue;
+    }
+
+    i++;
+  }
+  return tokens;
+}
+
+function tokensToLatex(tokens) {
+  return tokens.map(t => {
+    if (t.type === 'bar')       return '\\;\\big|\\;';
+    if (t.type === 'atitara')   return `\\overset{\\text{..}}{${t.text}}`;
+    if (t.type === 'upper')     return `\\overset{\\text{.}}{${t.text}}`;
+    if (t.type === 'lower')     return `\\underset{\\text{.}}{${t.text}}`;
+    if (t.type === 'anumandra') return `\\underset{\\text{..}}{${t.text}}`;
+    return t.text;
+  }).join('\\ ');
+}
+
+function convertRev() {
+  const tokens = tokeniseRev(document.getElementById('rev-input').value);
+  const latex  = tokensToLatex(tokens);
+  flashPanel('rev-output',
+    latex
+      ? `<div class="latex-out">${escHTML(latex)}</div>`
+      : '<div class="placeholder">No swaras detected.</div>'
+  );
+}
+
+function copyLatex() {
+  copyText(tokensToLatex(tokeniseRev(document.getElementById('rev-input').value)));
+}
+
+function clearRev() {
+  document.getElementById('rev-input').value = '';
+  document.getElementById('rev-output').innerHTML = '<div class="placeholder">LaTeX code will appear here\u2026</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════
+function setMode(mode) {
+  document.getElementById('mode-fwd').style.display = mode === 'fwd' ? '' : 'none';
+  document.getElementById('mode-rev').style.display = mode === 'rev' ? '' : 'none';
+  document.getElementById('tab-fwd').classList.toggle('active', mode === 'fwd');
+  document.getElementById('tab-rev').classList.toggle('active', mode === 'rev');
+}
+
+// ═══════════════════════════════════════════════════════
+//  REFERENCE TABLE
+// ═══════════════════════════════════════════════════════
+const REF = [
+  ['\\overset{\\text{..}}{X}  /  X..', 'atitara',   'X', 'Ati-tāra sthāyi (s..)'],
+  ['\\overset{\\text{.}}{X}  /  X.',   'upper',     'X', 'Tāra sthāyi (s.)'],
+  ['X  (plain Tamil)',                  'normal',    'X', 'Madhya sthāyi (s)'],
+  ['\\underset{\\text{.}}{X}  /  .X',  'lower',     'X', 'Mandra sthāyi (.s)'],
+  ['\\underset{\\text{..}}{X}  /  ..X','anumandra', 'X', 'Anu-mandra sthāyi (..s)'],
+  ['\\;\\big|\\;  /  |',               'bar',       '|', 'Beat / bar separator'],
+];
+
+(function buildRef() {
+  const tb = document.getElementById('ref-body');
+  REF.forEach(([latex, type, ch, desc]) => {
+    const tr = document.createElement('tr');
+    let cell;
+    if (type === 'bar') {
+      cell = `<span class="bar" style="font-size:.95rem"><span></span><span class="bar-mid">|</span><span></span></span>`;
+    } else {
+      const dT = type === 'atitara' ? '&#9679;&#9679;' : type === 'upper' ? '&#9679;' : '';
+      const dB = type === 'anumandra' ? '&#9679;&#9679;' : type === 'lower' ? '&#9679;' : '';
+      cell = `<span class="s" style="font-size:.95rem"><span class="dot-top" style="letter-spacing:.5px">${dT}</span><span>${ch}</span><span class="dot-bot" style="letter-spacing:.5px">${dB}</span></span>`;
+    }
+    tr.innerHTML = `<td>${escHTML(latex)}</td><td>${cell}</td><td>${desc}</td>`;
+    tb.appendChild(tr);
+  });
+})();
+
+// ═══════════════════════════════════════════════════════
+//  DARK MODE SYNC (PaperMod adds .dark to <html>)
+// ═══════════════════════════════════════════════════════
+(function syncDark() {
+  const html = document.documentElement;
+  const sync = () => document.body.classList.toggle('dark', html.classList.contains('dark'));
+  new MutationObserver(sync).observe(html, { attributes:true, attributeFilter:['class'] });
+  sync();
+})();
+
+// ═══════════════════════════════════════════════════════
+//  LIVE PREVIEW + INIT
+// ═══════════════════════════════════════════════════════
+let fwdT, revT;
+document.getElementById('fwd-input').addEventListener('input', () => { clearTimeout(fwdT); fwdT = setTimeout(convertFwd, 280); });
+document.getElementById('rev-input').addEventListener('input', () => { clearTimeout(revT); revT = setTimeout(convertRev, 280); });
+
+convertFwd();
+</script>
 </body>
 </html>
